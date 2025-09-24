@@ -5,11 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Message, Conversation
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
 from .models import User
+from .permissions import IsParticipantOfConversation
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
     def get_queryset(self):
         return Conversation.objects.filter(participants=self.request.user)
@@ -31,8 +32,10 @@ class ConversationViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]  
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["message_body"]
+    ordering_fields = ["sent_at"]
 
     def get_queryset(self):
         conversation_id = self.request.query_params.get("conversation_id")
@@ -49,7 +52,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        
+        if request.user not in conversation.participants.all():
+            return Response({"error": "You are not a participant of this conversation."},
+                            status=status.HTTP_403_FORBIDDEN)
+
         message = Message.objects.create(
             conversation=conversation,
             sender=request.user,
