@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'chats.ChatsConfig.apps',
     'rest_framework_simplejwt',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -125,11 +126,19 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination',
+    'PAGE_SIZE': 20,
+
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication', 
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
     ]
 }

@@ -1,11 +1,15 @@
 from django.shortcuts import render
 from rest_framework import viewsets, status, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated 
 from .models import Message, Conversation
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
 from .models import User
 from .permissions import IsParticipantOfConversation
+from .filters import MessageFilter
+from .pagination import MessagePagination
+
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
@@ -30,12 +34,15 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all()
+    queryset = Message.objects.all().order_by("-sent_at")
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated, IsParticipantOfConversation]  
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    permission_classes = [IsParticipantOfConversation]
+    pagination_class = MessagePagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = MessageFilter
     search_fields = ["message_body"]
     ordering_fields = ["sent_at"]
+    ordering = ["-sent_at"]
 
     def get_queryset(self):
         conversation_id = self.request.query_params.get("conversation_id")

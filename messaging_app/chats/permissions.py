@@ -20,15 +20,12 @@ class IsParticipantOfConversation(permissions.BasePermission):
         if isinstance(obj, Message):
             if request.user not in obj.conversation.participants.all():
                 return False
-
-            
             if request.method in ["PUT", "PATCH", "DELETE"]:
                 return True  
             if request.method in permissions.SAFE_METHODS:  
                 return True
             if request.method == "POST":  
                 return True
-
             return False
-
         return False
+    
