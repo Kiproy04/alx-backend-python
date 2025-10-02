@@ -110,3 +110,17 @@ class ThreadedMessagesView(APIView):
                 self.build_thread(reply) for reply in message.replies.all().order_by("timestamp")
             ],
         }
+
+class UnreadMessagesView(APIView):
+    def get(self, request, *args, **kwargs):
+        unread_messages = Message.unread.for_user(request.user)
+        data = [
+            {
+                "id": msg.id,
+                "sender": msg.sender.username,
+                "content": msg.content,
+                "timestamp": msg.timestamp
+            }
+            for msg in unread_messages
+        ]
+        return Response(data)

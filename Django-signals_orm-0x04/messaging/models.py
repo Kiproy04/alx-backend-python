@@ -1,6 +1,7 @@
 from django.db import models 
 import uuid
 from django.contrib.auth.models import AbstractUser
+from .manager import UnreadMessagesManager
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -36,7 +37,11 @@ class Message:
     parent_message = models.ForeignKey("self", related_name="replies", null=True, blank=True, on_delete=models.CASCADE)
     content  = models.TextField()
     edited = models.BooleanField(default=False)
+    read = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    objects = models.Manager()
+    unread = UnreadMessagesManager()
  
     def __str__(self):
         return f"Message from({self.sender} to {self.receiver}): {self.content[:30]}"
