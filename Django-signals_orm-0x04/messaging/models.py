@@ -1,7 +1,7 @@
 from django.db import models 
 import uuid
 from django.contrib.auth.models import AbstractUser
-from .manager import UnreadMessagesManager
+from .managers import UnreadMessagesManager
 
 class User(AbstractUser):
     ROLE_CHOICES = [

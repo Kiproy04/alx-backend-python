@@ -2,6 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets, status, filters, generics, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.permissions import IsAuthenticated 
 from .models import Message, Conversation, User
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
@@ -70,6 +72,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @method_decorator(cache_page(60))  
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class DeleteUserView(generics.DestroyAPIView):
