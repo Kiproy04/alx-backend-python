@@ -3,9 +3,9 @@ from rest_framework import viewsets, status, filters, generics, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated 
-from .models import Message, Conversation
+from .models import Message, Conversation, User
 from .serializers import ConversationSerializer, MessageSerializer, UserSerializer
-from .models import User
+from rest_framework.views import APIView
 from .permissions import IsParticipantOfConversation
 from .filters import MessageFilter
 from .pagination import MessagePagination
@@ -82,3 +82,31 @@ class DeleteUserView(generics.DestroyAPIView):
         user = self.get_object()
         user.delete()
         return Response({"detail": "User account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+class ThreadedMessagesView(APIView):
+    def get(self, request, *args, **kwargs):
+        root_messages = (
+            Message.objects
+            .filter(parent_message__isnull=True)
+            .select_related("sender", "receiver")
+            .prefetch_related("replies__sender", "replies__receiver")
+            .order_by("timestamp")
+        )
+
+        data = [self.build_thread(msg) for msg in root_messages]
+        return Response(data)
+
+    def build_thread(self, message):
+        return {
+            "id": str(message.id),
+            "sender": str(message.sender),
+            "receiver": str(message.receiver),
+            "content": message.content,
+            "timestamp": message.timestamp,
+            "parent_message": str(message.parent_message.id) if message.parent_message else None,
+            "replies": [
+                self.build_thread(reply) for reply in message.replies.all().order_by("timestamp")
+            ],
+        }
