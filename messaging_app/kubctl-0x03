@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+
+echo "Starting Rolling Update for Django App..."
+echo "------------------------------------------"
+
+# Apply updated deployment
+kubectl apply -f blue_deployment.yaml
+
+echo "Monitoring rollout status..."
+kubectl rollout status deployment/django-blue
+
+echo "Checking for downtime..."
+SERVICE_IP=$(minikube service django-service --url)
+
+echo "Sending continuous requests to test uptime..."
+for i in {1..20}
+do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" $SERVICE_IP)
+  echo "Request $i: HTTP Status $STATUS"
+  sleep 2
+done
+
+echo "------------------------------------------"
+echo "Verifying current pods..."
+kubectl get pods -l app=django,version=blue
+
+echo "Rolling update completed successfully!"
