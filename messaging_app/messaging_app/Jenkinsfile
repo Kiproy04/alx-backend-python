@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // Optional: virtual environment or test DB vars can go here
-        APP_DIR = 'messaging_app'
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
@@ -20,7 +15,7 @@ pipeline {
                 sh '''
                     echo "Installing dependencies..."
                     pip3 install --upgrade pip
-                    pip3 install -r ${APP_DIR}/requirements.txt
+                    pip3 install -r messaging_app/requirements.txt
                 '''
             }
         }
@@ -34,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('Archive Test Report') {
+        stage('Generate Test Report') {
             steps {
                 junit 'report.xml'
             }
@@ -43,9 +38,10 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline finished — cleaning up workspace.'
+            echo 'Pipeline finished successfully.'
             cleanWs()
         }
     }
 }
+
 
