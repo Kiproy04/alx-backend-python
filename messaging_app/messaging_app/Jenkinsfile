@@ -2,59 +2,50 @@ pipeline {
     agent any
 
     environment {
-        // Python virtual environment managed by ShiningPanda
-        VENV_DIR = '.venv'
+        // Optional: virtual environment or test DB vars can go here
+        APP_DIR = 'messaging_app'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                echo 'Pulling source code from GitHub...'
-                checkout scm
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/Kiproy04/alx-backend-python.git'
             }
         }
 
-        stage('Set up Python environment') {
+        stage('Install Dependencies') {
             steps {
-                echo 'Setting up Python virtual environment...'
-                // Create virtualenv and install requirements
-                withPythonEnv("${VENV_DIR}") {
-                    sh '''
-                        python3 -m venv ${VENV_DIR}
-                        . ${VENV_DIR}/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                    '''
-                }
+                sh '''
+                    echo "Installing dependencies..."
+                    pip3 install --upgrade pip
+                    pip3 install -r ${APP_DIR}/requirements.txt
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo 'Running tests with pytest...'
-                withPythonEnv("${VENV_DIR}") {
-                    sh '''
-                        pytest --maxfail=1 --disable-warnings \
-                        --junitxml=reports/results.xml --cov=. --cov-report=xml
-                    '''
-                }
+                sh '''
+                    echo "Running pytest..."
+                    pytest --maxfail=1 --disable-warnings -q --junitxml=report.xml
+                '''
             }
         }
 
-        stage('Generate Test Report') {
+        stage('Archive Test Report') {
             steps {
-                echo 'Publishing test report...'
-                junit 'reports/results.xml'
+                junit 'report.xml'
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check logs for details.'
+        always {
+            echo 'Pipeline finished — cleaning up workspace.'
+            cleanWs()
         }
     }
 }
+
